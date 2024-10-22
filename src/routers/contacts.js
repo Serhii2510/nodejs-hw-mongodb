@@ -1,22 +1,56 @@
-import { Router } from "express";
+import { Router } from 'express';
 
-import { createContactController, deleteContactController, getContactsController, getContactByIdController, patchContactController } from "../controllers/contacts.js";
-import { ctrlWrapper } from "../utils/ctrlWrapper.js";
-
-import { validateBody } from "../middlewares/validateBody.js";
-import { createContactsSchema, updateContactsSchema } from "../validation/contacts.js";
-import { isValidId } from "../middlewares/isValidId.js";
+import {
+  createContactController,
+  deleteContactController,
+  getContactsController,
+  getContactByIdController,
+  patchContactController,
+} from '../controllers/contacts.js';
+import { ctrlWrapper } from '../utils/ctrlWrapper.js';
+import {
+  createContactsSchema,
+  updateContactsSchema,
+} from '../validation/contacts.js';
+import { validateBody } from '../middlewares/validateBody.js';
+import { isValidId } from '../middlewares/isValidId.js';
+import { authenticate } from '../middlewares/authenticate.js';
+import { checkRoles } from '../middlewares/checkRoles.js';
+import { ROLES } from '../constants/index.js';
 
 const router = Router();
 
-router.get('/contacts', ctrlWrapper(getContactsController));
+router.use(authenticate);
 
-router.get('/contacts/:contactId', isValidId, ctrlWrapper(getContactByIdController));
+router.get('/', checkRoles(ROLES.ADMIN), ctrlWrapper(getContactsController));
 
-router.post('/contacts', validateBody(createContactsSchema), ctrlWrapper(createContactController));
+router.get(
+  '/:contactId',
+  checkRoles(ROLES.ADMIN, ROLES.USER),
+  isValidId,
+  ctrlWrapper(getContactByIdController),
+);
 
-router.patch('/contacts/:contactId', isValidId, validateBody(updateContactsSchema), ctrlWrapper(patchContactController));
+router.post(
+  '/',
+  checkRoles(ROLES.ADMIN),
+  validateBody(createContactsSchema),
+  ctrlWrapper(createContactController),
+);
 
-router.delete('/contacts/:contactId', isValidId, ctrlWrapper(deleteContactController));
+router.patch(
+  '/:contactId',
+  checkRoles(ROLES.ADMIN, ROLES.USER),
+  isValidId,
+  validateBody(updateContactsSchema),
+  ctrlWrapper(patchContactController),
+);
+
+router.delete(
+  '/:contactId',
+  checkRoles(ROLES.ADMIN),
+  isValidId,
+  ctrlWrapper(deleteContactController),
+);
 
 export default router;
